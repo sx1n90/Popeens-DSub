@@ -1,39 +1,18 @@
 package github.popeen.dsub.fragments;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.res.Resources;
-
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
-
-import android.content.SharedPreferences;
-
-
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.StatFs;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import github.popeen.dsub.util.EnvironmentVariables;
-import github.popeen.dsub.R;
-import github.popeen.dsub.adapter.MainAdapter;
-import github.popeen.dsub.adapter.SectionAdapter;
-import github.popeen.dsub.domain.ServerInfo;
-import github.popeen.dsub.util.Constants;
-import github.popeen.dsub.util.FileUtil;
-import github.popeen.dsub.util.KakaduaUtil;
-import github.popeen.dsub.util.LoadingTask;
-import github.popeen.dsub.util.ProgressListener;
-import github.popeen.dsub.util.UserUtil;
-import github.popeen.dsub.util.Util;
-import github.popeen.dsub.service.MusicService;
-import github.popeen.dsub.service.MusicServiceFactory;
-import github.popeen.dsub.view.ChangeLog;
-import github.popeen.dsub.view.UpdateView;
-
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -42,7 +21,6 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -50,6 +28,22 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
+
+import github.popeen.dsub.R;
+import github.popeen.dsub.adapter.MainAdapter;
+import github.popeen.dsub.adapter.SectionAdapter;
+import github.popeen.dsub.domain.ServerInfo;
+import github.popeen.dsub.service.MusicService;
+import github.popeen.dsub.service.MusicServiceFactory;
+import github.popeen.dsub.util.Constants;
+import github.popeen.dsub.util.EnvironmentVariables;
+import github.popeen.dsub.util.FileUtil;
+import github.popeen.dsub.util.LoadingTask;
+import github.popeen.dsub.util.ProgressListener;
+import github.popeen.dsub.util.UserUtil;
+import github.popeen.dsub.util.Util;
+import github.popeen.dsub.view.ChangeLog;
+import github.popeen.dsub.view.UpdateView;
 
 public class MainFragment extends SelectRecyclerFragment<Integer> {
 	private static final String TAG = MainFragment.class.getSimpleName();
@@ -361,6 +355,7 @@ public class MainFragment extends SelectRecyclerFragment<Integer> {
 					}
 
 					String response = responseBuffer.toString();
+
                     urlConnection.disconnect();
 					if(response.indexOf("http") == 0) {
 						return response.replace("http:", "https:");
@@ -384,11 +379,16 @@ public class MainFragment extends SelectRecyclerFragment<Integer> {
 					footer += "\nLogs: " + logcat;
 					footer += "\nBuild Number: " + packageInfo.versionCode;
 
-					Intent email = new Intent(Intent.ACTION_SENDTO,
-							Uri.fromParts("mailto", "patrik@ptjwebben.se", null));
-					email.putExtra(Intent.EXTRA_SUBJECT, "Booksonic " + packageInfo.versionName + " Error Logs");
-					email.putExtra(Intent.EXTRA_TEXT, "Describe the problem here\n\n\n" + footer);
-					startActivity(email);
+					Intent selectorIntent = new Intent(Intent.ACTION_SENDTO);
+					selectorIntent.setData(Uri.parse("mailto:"));
+
+					final Intent emailIntent = new Intent(Intent.ACTION_SEND);
+					emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"support@booksonic.org"});
+					emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Booksonic " + packageInfo.versionName + " Error Logs");
+					emailIntent.putExtra(Intent.EXTRA_TEXT, "Describe the problem here\n\n\n" + footer);
+					emailIntent.setSelector( selectorIntent );
+
+					startActivity(Intent.createChooser(emailIntent, "Send log..."));
 				}
 			}.execute();
 		} catch(Exception e) {}

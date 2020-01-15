@@ -14,9 +14,17 @@
 			android:id="@+id/select_album_text_layout"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
-			android:layout_toRightOf="@+id/select_album_art"
 			android:orientation="vertical"
 			android:layout_centerVertical="true">
+
+			<github.popeen.dsub.view.RecyclingImageView
+				android:id="@+id/select_album_art"
+				android:layout_width="@dimen/AlbumArt.Header"
+				android:layout_height="@dimen/AlbumArt.Header"
+				android:layout_alignParentTop="true"
+				android:layout_alignParentLeft="true"
+				android:scaleType="fitCenter"
+				android:contentDescription="@null"/>
 
 			<TextView
 				android:text="This is the album title"
@@ -31,12 +39,85 @@
 				android:scrollHorizontally="true"
 				android:focusable="true"
 				android:focusableInTouchMode="true"
-				android:textColor="?android:textColorPrimary">
+				android:textColor="?android:textColorPrimary"
+				android:layout_marginTop="30dp"
+				android:paddingLeft="10dp"
+				android:textSize="25dp">
 
 				<requestFocus android:focusable="true"
 					android:focusableInTouchMode="true"
 					android:duplicateParentState="true" />
 			</TextView>
+
+
+			<TextView
+				android:text="Author:"
+				android:id="@+id/select_album_author"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:singleLine="true"
+				android:ellipsize="end"
+				android:textColor="?android:textColorPrimary"
+				android:paddingLeft="10dp"
+				android:layout_marginTop="30dp"
+				android:textSize="18dp"/>
+
+
+			<TextView
+				android:text="Narrator:"
+				android:id="@+id/select_album_narrator"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:singleLine="true"
+				android:ellipsize="end"
+				android:textColor="?android:textColorPrimary"
+				android:paddingLeft="10dp"
+				android:layout_marginTop="30dp"
+				android:textSize="18dp"/>
+
+			<Button
+				android:id="@+id/listenButton"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginLeft="20dp"
+				android:layout_marginRight="20dp"
+				android:layout_marginTop="30dp"
+				android:text="Listen"
+				android:textColor="#ffffff"
+				android:layout_gravity="center"
+				android:elevation="2dp"
+				android:background="@drawable/listenbuttonbackground"/>
+
+
+			<TextView
+				android:text="0h 0min"
+				android:id="@+id/select_album_duration"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:singleLine="true"
+				android:ellipsize="end"
+				android:textColor="#646464"
+				android:paddingLeft="10dp"
+				android:layout_marginTop="30dp"
+				android:textSize="16dp"/>
+
+
+			<TextView
+				android:text=""
+				android:id="@+id/select_album_description"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:singleLine="false"
+				android:ellipsize="end"
+				android:textColor="?android:textColorPrimary"
+				android:paddingLeft="10dp"
+				android:paddingRight="10dp"
+				android:layout_marginTop="30dp"
+				android:textSize="18dp"/>
 
 			<TextView
 				android:text="0:00"
@@ -110,15 +191,18 @@
 				android:layout_gravity="center_vertical"/>
 		</LinearLayout>
 
-		<github.popeen.dsub.view.RecyclingImageView
-			android:id="@+id/select_album_art"
-			android:layout_width="@dimen/AlbumArt.Header"
-			android:layout_height="@dimen/AlbumArt.Header"
+		<ImageView
+			android:id="@+id/select_album_art_download"
+			android:layout_width="65dp"
+			android:layout_height="65dp"
 			android:layout_alignParentTop="true"
-			android:layout_alignParentLeft="true"
-			android:layout_marginRight="10dip"
-			android:scaleType="fitCenter"
+			android:layout_alignParentRight="true"
+			android:layout_margin="100dp"
+			android:src="@drawable/ic_menu_download_dark"
+			android:background="@drawable/coverartdownload"
+			android:elevation="2dp"
 			android:contentDescription="@null"/>
+
 	</RelativeLayout>
 
 	<FrameLayout

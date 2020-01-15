@@ -18,6 +18,7 @@
  */
 package github.popeen.dsub.activity;
 
+import android.Manifest.permission;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -30,26 +31,22 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.Manifest.permission;
 import android.media.AudioManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -69,23 +66,17 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.kobakei.ratethisapp.RateThisApp;
 
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.Socket;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
 import github.popeen.dsub.R;
 import github.popeen.dsub.domain.ServerInfo;
 import github.popeen.dsub.fragments.AdminFragment;
@@ -95,17 +86,14 @@ import github.popeen.dsub.service.DownloadService;
 import github.popeen.dsub.service.HeadphoneListenerService;
 import github.popeen.dsub.service.MusicService;
 import github.popeen.dsub.service.MusicServiceFactory;
-import github.popeen.dsub.service.RESTMusicService;
-import github.popeen.dsub.updates.UpdateApp;
 import github.popeen.dsub.util.Constants;
 import github.popeen.dsub.util.DrawableTint;
 import github.popeen.dsub.util.ImageLoader;
-import github.popeen.dsub.util.KakaduaUtil;
 import github.popeen.dsub.util.SilentBackgroundTask;
 import github.popeen.dsub.util.ThemeUtil;
+import github.popeen.dsub.util.UserUtil;
 import github.popeen.dsub.util.Util;
 import github.popeen.dsub.view.UpdateView;
-import github.popeen.dsub.util.UserUtil;
 
 
 public class SubsonicActivity extends AppCompatActivity implements OnItemSelectedListener, SensorEventListener {
@@ -193,15 +181,6 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 						case Constants.PREFERENCES_KEY_BOOKMARKS_ENABLED:
 							setDrawerItemVisible(R.id.drawer_bookmarks, false);
 							break;
-						case Constants.PREFERENCES_KEY_INTERNET_RADIO_ENABLED:
-							setDrawerItemVisible(R.id.drawer_internet_radio_stations, false);
-							break;
-						case Constants.PREFERENCES_KEY_SHARED_ENABLED:
-							setDrawerItemVisible(R.id.drawer_shares, false);
-							break;
-						case Constants.PREFERENCES_KEY_CHAT_ENABLED:
-							setDrawerItemVisible(R.id.drawer_chat, false);
-							break;
 						case Constants.PREFERENCES_KEY_ADMIN_ENABLED:
 							setDrawerItemVisible(R.id.drawer_admin, false);
 							break;
@@ -266,62 +245,65 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
         if(!Util.isOffline(context)) {
             new Thread(new Runnable() {
                 public void run() {
-                    SharedPreferences prefs = Util.getPreferences(context);
-                    String url = Util.getRestUrl(context, "ping") + "&f=json";
-                    final String input = KakaduaUtil.http_get_contents_all_cert(url);
-                    final String ip = KakaduaUtil.http_get_contents("https://ip.popeen.com/api/");
-                    Log.w("pinging", input);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
+                	try {
+						SharedPreferences prefs = Util.getPreferences(context);
+						String url = Util.getRestUrl(context, "ping") + "&f=json";
+						final String input = Jsoup.connect(url).get().body().outerHtml();
+						final String ip = Jsoup.connect("https://ip.popeen.com/api/").get().body().outerHtml();
+						Log.w("pinging", input);
+						runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
 
-                            try {
-                                JSONObject json = new JSONObject(input);
-                                String resp = json.getJSONObject("subsonic-response").getString("booksonic");
-                                Log.w("outdated?", resp);
-                                TextView t = (TextView) findViewById(R.id.msg);
-                                if (t != null) {
-                                    if (resp.equals("outdated")) {
-                                        Log.w(":/", ":/");
-                                        t.setText(context.getText(R.string.msg_server_outdated));
-                                        t.setVisibility(View.VISIBLE);
-                                    } else if (resp.equals("outdated_beta") || resp.equals("true")) { //early beta versions only returned "true"
-                                        Log.w(":(", ":(");
-                                        t.setText(context.getText(R.string.msg_server_outdated_beta));
-                                        t.setVisibility(View.VISIBLE);
-                                    } else {
-                                        Log.w(":)", ":)");
-                                        t.setVisibility(View.GONE);
-                                        try {
-                                            resp = json.getJSONObject("subsonic-response").getString("emulator");
-                                            t.setText("Server Emulator: "+resp.toString());
-                                            t.setVisibility(View.VISIBLE);
-                                        }catch(Exception e){}
-                                    }
-                                }
-                            } catch (Exception er) {
-                                TextView t = (TextView) findViewById(R.id.msg);
-                                if (t != null) {
-                                    Log.w("Network Error", er.toString());
-                                    if(er.toString().contains("End of input at character 0")){
-                                        try{
-                                            JSONObject ipJson = new JSONObject(ip);
-                                            String ipResp = ipJson.getString("ip");
-                                            t.setText(context.getText(R.string.msg_server_offline));
-                                        }catch(Exception e){
-                                            t.setText(context.getText(R.string.msg_noInternet));
-                                        }
+								try {
+									JSONObject json = new JSONObject(input);
+									String resp = json.getJSONObject("subsonic-response").getString("booksonic");
+									Log.w("outdated?", resp);
+									TextView t = (TextView) findViewById(R.id.msg);
+									if (t != null) {
+										if (resp.equals("outdated")) {
+											Log.w(":/", ":/");
+											t.setText(context.getText(R.string.msg_server_outdated));
+											t.setVisibility(View.VISIBLE);
+										} else if (resp.equals("outdated_beta") || resp.equals("true")) { //early beta versions only returned "true"
+											Log.w(":(", ":(");
+											t.setText(context.getText(R.string.msg_server_outdated_beta));
+											t.setVisibility(View.VISIBLE);
+										} else {
+											Log.w(":)", ":)");
+											t.setVisibility(View.GONE);
+											try {
+												resp = json.getJSONObject("subsonic-response").getString("emulator");
+												t.setText("Server Emulator: " + resp.toString());
+												t.setVisibility(View.VISIBLE);
+											} catch (Exception e) {
+											}
+										}
+									}
+								} catch (Exception er) {
+									TextView t = (TextView) findViewById(R.id.msg);
+									if (t != null) {
+										Log.w("Network Error", er.toString());
+										if (er.toString().contains("End of input at character 0")) {
+											try {
+												JSONObject ipJson = new JSONObject(ip);
+												String ipResp = ipJson.getString("ip");
+												t.setText(context.getText(R.string.msg_server_offline));
+											} catch (Exception e) {
+												t.setText(context.getText(R.string.msg_noInternet));
+											}
 
-                                        t.setVisibility(View.VISIBLE);
+											t.setVisibility(View.VISIBLE);
 
-                                    }else {
-                                        t.setText(context.getText(R.string.msg_server_notBooksonic));
-                                        t.setVisibility(View.VISIBLE);
-                                    }
-                                }
-                            }
-                        }
-                    });
+										} else {
+											t.setText(context.getText(R.string.msg_server_notBooksonic));
+											t.setVisibility(View.VISIBLE);
+										}
+									}
+								}
+							}
+						});
+					}catch (Exception e){}
                 }
             }).start();
         }
@@ -421,23 +403,11 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 						case R.id.drawer_library:
 							drawerItemSelected("Artist");
 							return true;
-						case R.id.drawer_playlists:
-							drawerItemSelected("Playlist");
-							return true;
 						case R.id.drawer_podcasts:
 							drawerItemSelected("Podcast");
 							return true;
 						case R.id.drawer_bookmarks:
 							drawerItemSelected("Bookmark");
-							return true;
-						case R.id.drawer_internet_radio_stations:
-							drawerItemSelected("Internet Radio");
-							return true;
-						case R.id.drawer_shares:
-							drawerItemSelected("Share");
-							return true;
-						case R.id.drawer_chat:
-							drawerItemSelected("Chat");
 							return true;
 						case R.id.drawer_admin:
 							if (UserUtil.isCurrentAdmin()) {
@@ -711,9 +681,6 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 		SharedPreferences prefs = Util.getPreferences(this);
 		boolean podcastsEnabled = prefs.getBoolean(Constants.PREFERENCES_KEY_PODCASTS_ENABLED, true);
 		boolean bookmarksEnabled = prefs.getBoolean(Constants.PREFERENCES_KEY_BOOKMARKS_ENABLED, true) && !Util.isOffline(this) && ServerInfo.canBookmark(this);
-		boolean internetRadioEnabled = prefs.getBoolean(Constants.PREFERENCES_KEY_INTERNET_RADIO_ENABLED, true) && !Util.isOffline(this) && ServerInfo.canInternetRadio(this);
-		boolean sharedEnabled = prefs.getBoolean(Constants.PREFERENCES_KEY_SHARED_ENABLED, true) && !Util.isOffline(this);
-		boolean chatEnabled = prefs.getBoolean(Constants.PREFERENCES_KEY_CHAT_ENABLED, true) && !Util.isOffline(this);
 		boolean adminEnabled = prefs.getBoolean(Constants.PREFERENCES_KEY_ADMIN_ENABLED, true) && !Util.isOffline(this);
 
 		MenuItem offlineMenuItem = drawerList.getMenu().findItem(R.id.drawer_offline);
@@ -740,15 +707,6 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 		}
 		if(!bookmarksEnabled) {
 			setDrawerItemVisible(R.id.drawer_bookmarks, false);
-		}
-		if(!internetRadioEnabled) {
-			setDrawerItemVisible(R.id.drawer_internet_radio_stations, false);
-		}
-		if(!sharedEnabled) {
-			setDrawerItemVisible(R.id.drawer_shares, false);
-		}
-		if(!chatEnabled) {
-			setDrawerItemVisible(R.id.drawer_chat, false);
 		}
 		if(!adminEnabled) {
 			setDrawerItemVisible(R.id.drawer_admin, false);
@@ -1315,18 +1273,10 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 				return R.id.drawer_home;
 			case "Artist":
 				return R.id.drawer_library;
-			case "Playlist":
-				return R.id.drawer_playlists;
 			case "Podcast":
 				return R.id.drawer_podcasts;
 			case "Bookmark":
 				return R.id.drawer_bookmarks;
-			case "Internet Radio":
-				return R.id.drawer_internet_radio_stations;
-			case "Share":
-				return R.id.drawer_shares;
-			case "Chat":
-				return R.id.drawer_chat;
 			default:
 				return R.id.drawer_home;
 		}

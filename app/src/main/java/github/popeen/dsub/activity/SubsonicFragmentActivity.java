@@ -37,16 +37,11 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
-
-import org.json.JSONObject;
 
 import java.io.File;
 import java.util.Date;
@@ -79,7 +74,6 @@ import github.popeen.dsub.updates.Updater;
 import github.popeen.dsub.util.Constants;
 import github.popeen.dsub.util.DrawableTint;
 import github.popeen.dsub.util.FileUtil;
-import github.popeen.dsub.util.KakaduaUtil;
 import github.popeen.dsub.util.SilentBackgroundTask;
 import github.popeen.dsub.util.UserUtil;
 import github.popeen.dsub.util.Util;
@@ -388,7 +382,7 @@ public class SubsonicFragmentActivity extends SubsonicActivity implements Downlo
 			} else {
 				Dialog log = changeLog.getLogDialog();
 				if (log != null) {
-					log.show();
+					//log.show(); //For now we don't want to show changelog on first start after update, most users don't care about this. If they want to see it they can do that from the top right menu. Might change it back later depending on feedback.
 				}
 			}
 		}
@@ -951,7 +945,7 @@ public class SubsonicFragmentActivity extends SubsonicActivity implements Downlo
 			getImageLoader().loadImage(coverArtView, song, false, height, false);
 		}
 
-		updateMediaButtons(shouldFastForward);
+		updateMediaButtons(true);
 	}
 
 	private void updateMediaButtons(boolean shouldFastForward) {
@@ -984,7 +978,7 @@ public class SubsonicFragmentActivity extends SubsonicActivity implements Downlo
 		if(this.currentPlaying != currentPlaying || this.currentPlaying == null) {
 			onSongChanged(currentPlaying, currentPlayingIndex, shouldFastForward);
 		} else {
-			updateMediaButtons(shouldFastForward);
+			updateMediaButtons(true);
 		}
 	}
 

@@ -1,17 +1,16 @@
 package github.popeen.dsub.fragments;
 
-import android.annotation.TargetApi;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.text.SpannableString;
@@ -25,6 +24,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RatingBar;
@@ -38,36 +38,39 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import github.popeen.dsub.R;
-import github.popeen.dsub.adapter.AlphabeticalAlbumAdapter;
-import github.popeen.dsub.adapter.EntryInfiniteGridAdapter;
-import github.popeen.dsub.adapter.EntryGridAdapter;
-import github.popeen.dsub.adapter.SectionAdapter;
-import github.popeen.dsub.adapter.TopRatedAlbumAdapter;
-import github.popeen.dsub.domain.ArtistInfo;
-import github.popeen.dsub.domain.MusicDirectory;
-import github.popeen.dsub.domain.ServerInfo;
-import github.popeen.dsub.domain.Share;
-import github.popeen.dsub.service.CachedMusicService;
-import github.popeen.dsub.service.DownloadService;
-import github.popeen.dsub.util.BookInfoAPIParams;
-import github.popeen.dsub.util.DrawableTint;
-import github.popeen.dsub.util.ImageLoader;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import github.popeen.dsub.R;
+import github.popeen.dsub.adapter.AlphabeticalAlbumAdapter;
+import github.popeen.dsub.adapter.EntryGridAdapter;
+import github.popeen.dsub.adapter.EntryInfiniteGridAdapter;
+import github.popeen.dsub.adapter.SectionAdapter;
+import github.popeen.dsub.adapter.TopRatedAlbumAdapter;
+import github.popeen.dsub.domain.ArtistInfo;
+import github.popeen.dsub.domain.MusicDirectory;
 import github.popeen.dsub.domain.PodcastEpisode;
+import github.popeen.dsub.domain.ServerInfo;
+import github.popeen.dsub.domain.Share;
+import github.popeen.dsub.service.CachedMusicService;
+import github.popeen.dsub.service.DownloadService;
 import github.popeen.dsub.service.MusicService;
 import github.popeen.dsub.service.MusicServiceFactory;
 import github.popeen.dsub.service.OfflineException;
 import github.popeen.dsub.service.ServerTooOldException;
+import github.popeen.dsub.util.BookInfoAPI;
+import github.popeen.dsub.util.BookInfoAPIParams;
 import github.popeen.dsub.util.Constants;
+import github.popeen.dsub.util.DrawableTint;
+import github.popeen.dsub.util.ImageLoader;
 import github.popeen.dsub.util.LoadingTask;
 import github.popeen.dsub.util.Pair;
 import github.popeen.dsub.util.SilentBackgroundTask;
@@ -76,16 +79,9 @@ import github.popeen.dsub.util.UpdateHelper;
 import github.popeen.dsub.util.UserUtil;
 import github.popeen.dsub.util.Util;
 import github.popeen.dsub.view.FastScroller;
-import github.popeen.dsub.view.GridSpacingDecoration;
 import github.popeen.dsub.view.MyLeadingMarginSpan2;
 import github.popeen.dsub.view.RecyclingImageView;
 import github.popeen.dsub.view.UpdateView;
-import github.popeen.dsub.util.BookInfoAPI;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 import static github.popeen.dsub.domain.MusicDirectory.Entry;
 
@@ -278,15 +274,7 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 		} else if(artist && !showAll) {
 			menuInflater.inflate(R.menu.select_album, menu);
 
-			if(!ServerInfo.hasTopSongs(context)) {
-				menu.removeItem(R.id.menu_top_tracks);
-			}
-			if(!ServerInfo.checkServerVersion(context, "1.11")) {
-				menu.removeItem(R.id.menu_radio);
-				menu.removeItem(R.id.menu_similar_artists);
-			} else if(!ServerInfo.hasSimilarArtists(context)) {
-				menu.removeItem(R.id.menu_similar_artists);
-			}
+
 		} else {
 			if(podcastId == null) {
 				if(Util.isOffline(context)) {
@@ -295,17 +283,7 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 				else {
 					menuInflater.inflate(R.menu.select_song, menu);
 
-					if(playlistId == null || !playlistOwner) {
-						menu.removeItem(R.id.menu_remove_playlist);
-					}
-				}
 
-				SharedPreferences prefs = Util.getPreferences(context);
-				if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_PLAY_NEXT, true)) {
-					menu.setGroupVisible(R.id.hide_play_next, false);
-				}
-				if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_PLAY_LAST, true)) {
-					menu.setGroupVisible(R.id.hide_play_last, false);
 				}
 			} else {
 				if(Util.isOffline(context)) {
@@ -329,23 +307,8 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-			case R.id.menu_remove_playlist:
-				removeFromPlaylist(playlistId, playlistName, getSelectedIndexes());
-				return true;
 			case R.id.menu_download_all:
 				downloadAllPodcastEpisodes();
-				return true;
-			case R.id.menu_show_all:
-				setShowAll();
-				return true;
-			case R.id.menu_top_tracks:
-				showTopTracks();
-				return true;
-			case R.id.menu_similar_artists:
-				showSimilarArtists(id);
-				return true;
-			case R.id.menu_radio:
-				startArtistRadio(id);
 				return true;
 			case R.id.reverse:
 				FragmentTransaction ft = getFragmentManager().beginTransaction();
@@ -360,22 +323,12 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 	@Override
 	public void onCreateContextMenu(Menu menu, MenuInflater menuInflater, UpdateView updateView, Entry entry) {
 		onCreateContextMenuSupport(menu, menuInflater, updateView, entry);
-		if(!entry.isVideo() && !Util.isOffline(context) && (playlistId == null || !playlistOwner) && (podcastId == null  || Util.isOffline(context) && podcastId != null)) {
-			menu.removeItem(R.id.song_menu_remove_playlist);
-		}
-
 		recreateContextMenu(menu);
 	}
 	@Override
 	public boolean onContextItemSelected(MenuItem menuItem, UpdateView<Entry> updateView, Entry entry) {
 		if(onContextItemSelected(menuItem, entry)) {
 			return true;
-		}
-
-		switch (menuItem.getItemId()) {
-			case R.id.song_menu_remove_playlist:
-				removeFromPlaylist(playlistId, playlistName, Arrays.<Integer>asList(entries.indexOf(entry)));
-				break;
 		}
 
 		return true;
@@ -1160,24 +1113,6 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 		// Try a few times to get a random cover art
 		if(artistInfo != null) {
 			final String url = artistInfo.getImageUrl();
-			coverArtView.setOnClickListener(new View.OnClickListener() {
-				@Override
-				public void onClick(View v) {
-					if (url == null) {
-						return;
-					}
-
-					AlertDialog.Builder builder = new AlertDialog.Builder(context);
-					ImageView fullScreenView = new ImageView(context);
-					imageLoader.loadImage(fullScreenView, url, true);
-					builder.setCancelable(true);
-
-					AlertDialog imageDialog = builder.create();
-					// Set view here with unecessary 0's to remove top/bottom border
-					imageDialog.setView(fullScreenView, 0, 0, 0, 0);
-					imageDialog.show();
-				}
-			});
 			imageLoader.loadImage(coverArtView, url, false);
 		} else if(entries.size() > 0) {
 
@@ -1186,28 +1121,6 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 			for (int i = 0; (i < 3) && (coverArtRep == null || coverArtRep.getCoverArt() == null); i++) {
 				coverArtRep = entries.get(random.nextInt(entries.size()));
 			}
-
-
-			coverArtView.setOnClickListener(new View.OnClickListener() {
-				@Override
-				public void onClick(View v) {
-
-					if (coverArtRep == null || coverArtRep.getCoverArt() == null) {
-						return;
-					}
-
-					AlertDialog.Builder builder = new AlertDialog.Builder(context);
-					ImageView fullScreenView = new ImageView(context);
-
-					imageLoader.loadImage(fullScreenView, coverArtRep, true, true);
-					builder.setCancelable(true);
-
-					AlertDialog imageDialog = builder.create();
-					// Set view here with unecessary 0's to remove top/bottom border
-					imageDialog.setView(fullScreenView, 0, 0, 0, 0);
-					imageDialog.show();
-				}
-			});
 
 			synchronized (coverArtRep) {
 				coverArtId = coverArtRep.getCoverArt();
@@ -1232,7 +1145,7 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 			titleView.setText(podcastName);
 			titleView.setPadding(0, 6, 4, 8);
 		} else if(name != null) {
-			titleView.setText(name);
+			titleView.setText(name.replaceFirst("^[0-9]{4}+\\s-\\s", "")); //TODO, This hides YEAR - from the beginning of the title if it is there, make that an optional setting
 			if(artistInfo != null) {
 				titleView.setPadding(0, 6, 4, 8);
 			}
@@ -1309,7 +1222,7 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 			}
 		}
 		if(bookDescription.equals("noInfo")){
-			bookDescription = "The server has no description for this book"; }
+			bookDescription = "No description available"; }
 
 		final TextView artistView = (TextView) header.findViewById(R.id.select_album_artist);
 		if(podcastDescription != null || artistInfo != null || bookDescription != null) {
@@ -1322,17 +1235,18 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 			if(podcastDescription != null){
 				text = podcastDescription;
 			}
-			if(artistInfo != null && bookDescription.equals("The server has no description for this book")){
+			if(artistInfo != null && bookDescription.equals("No description available")){
 				text = artistInfo.getBiography();
 			}
 			Spanned spanned = null;
 			if(text != null) {
 				String newText = "";
-				try{ if(!artistName.equals("")){ newText += "<b>" + context.getResources().getString(R.string.main_artist) + "</b>: " + artistName + "<br/>"; } } catch(Exception e){}
+				try{ if(!artistName.equals("")){ newText += "<br/><b>" + context.getResources().getString(R.string.main_artist) + "</b>: " + artistName + "<br/>"; } } catch(Exception e){}
 				try{ if(totalDuration > 0) { newText += "<b>" + context.getResources().getString(R.string.album_book_reader) + "</b>: " + bookReader + "<br/>"; } } catch(Exception e){}
 				try{ if(totalDuration > 0) { newText += "<b>" + context.getResources().getString(R.string.album_book_length) + "</b>: " + Util.formatDuration(totalDuration) + "<br/>"; } } catch(Exception e){}
-				try{ newText += text+"<br/>";} catch(Exception e){}
+				try{ newText += "<br/>&nbsp;<br/>"+text+"<br/>";} catch(Exception e){}
 				spanned = Html.fromHtml(newText);
+				spanned = Html.fromHtml("");
 			}
 
 			artistView.setText(spanned);
@@ -1342,48 +1256,54 @@ public class SelectDirectoryFragment extends SubsonicFragment implements Section
 			artistView.setTextAppearance(context, android.R.style.TextAppearance_Small);
 
 			final Spanned spannedText = spanned;
-			artistView.setOnClickListener(new View.OnClickListener() {
-				@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-				@Override
-				public void onClick(View v) {
 					if(artistView.getMaxLines() == minLines) {
 						// Use LeadingMarginSpan2 to try to make text flow around image
 						Display display = context.getWindowManager().getDefaultDisplay();
 						ImageView coverArtView = (ImageView) header.findViewById(R.id.select_album_art);
+						TextView autorView = (TextView) header.findViewById(R.id.select_album_author);
+						TextView narratorView = (TextView) header.findViewById(R.id.select_album_narrator);
+						Button listenButton = (Button) header.findViewById(R.id.listenButton);
+						TextView durationView = (TextView) header.findViewById(R.id.select_album_duration);
+						TextView descriptionnView = (TextView) header.findViewById(R.id.select_album_description);
+						ImageView coverArtDownloadView = (ImageView) header.findViewById(R.id.select_album_art_download);
 						coverArtView.measure(display.getWidth(), display.getHeight());
 
-						int height, width;
-						ViewGroup.MarginLayoutParams vlp = (ViewGroup.MarginLayoutParams) coverArtView.getLayoutParams();
-						if(coverArtView.getDrawable() != null) {
-							height = coverArtView.getMeasuredHeight() + coverArtView.getPaddingBottom();
-							width = coverArtView.getWidth() + coverArtView.getPaddingRight();
-						} else {
-							height = coverArtView.getHeight();
-							width = coverArtView.getWidth() + coverArtView.getPaddingRight();
+						coverArtDownloadView.setOnClickListener(new View.OnClickListener() {
+							@Override
+							public void onClick(View v) {
+								downloadBackground(false);
+								clearSelected();
+								Util.toast(context, "Downloading audiobook", false);
+							}
+						});
+
+						listenButton.setOnClickListener(new View.OnClickListener() {
+							@Override
+							public void onClick(View v) {
+								playNow(false, false);
+							}
+						});
+
+						coverArtView.getLayoutParams().width = display.getWidth();
+						coverArtView.getLayoutParams().height = display.getWidth();
+						descriptionnView.setText(text);
+
+						if(songCount != 0) {
+							autorView.setText("Author: " + artistName);
+							narratorView.setText("Narrated by: " + bookReader);
+							durationView.setText(Util.formatDuration(totalDuration, true));
+							Util.setMargins(coverArtDownloadView, 0, (display.getWidth()-120) ,70 ,0);
+
+						}else{
+							coverArtDownloadView.setVisibility(View.GONE);
+							autorView.setVisibility(View.GONE);
+							narratorView.setVisibility(View.GONE);
+							listenButton.setVisibility(View.GONE);
+							durationView.setVisibility(View.GONE);
 						}
-						float textLineHeight = artistView.getPaint().getTextSize();
-
-						int lines = (int) Math.ceil(height / textLineHeight) + 1;
-
-						SpannableString ss = new SpannableString(spannedText);
-						ss.setSpan(new MyLeadingMarginSpan2(lines, width), 0, ss.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-						View linearLayout = header.findViewById(R.id.select_album_text_layout);
-						RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) linearLayout.getLayoutParams();
-						int[]rules = params.getRules();
-						rules[RelativeLayout.RIGHT_OF] = 0;
-						params.leftMargin = vlp.rightMargin;
-
-						artistView.setText(ss);
-						artistView.setMaxLines(100);
-
-						vlp = (ViewGroup.MarginLayoutParams) titleView.getLayoutParams();
-						vlp.leftMargin = width;
 					} else {
 						artistView.setMaxLines(minLines);
 					}
-				}
-			});
 			artistView.setMovementMethod(LinkMovementMethod.getInstance());
 		} else if(topTracks) {
 			artistView.setText(R.string.menu_top_tracks);

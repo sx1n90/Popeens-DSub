@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-	xmlns:myns="http://schemas.android.com/apk/res/github.popeen.dsub"
-	android:title="@string/settings.cache_screen_title">
+    android:title="@string/settings.cache_screen_title">
 
 	<PreferenceCategory
 		android:title="@string/settings.network_title">
@@ -56,7 +55,7 @@
 		<ListPreference
 			android:title="@string/settings.preload_wifi"
 			android:key="preloadCountWifi"
-			android:defaultValue="3"
+			android:defaultValue="-1"
 			android:entryValues="@array/preloadCountValues"
 			android:entries="@array/preloadCountNames"/>
 
