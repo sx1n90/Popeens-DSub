@@ -19,9 +19,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.view.Menu;
 import android.view.MenuInflater;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -132,7 +130,5 @@ public class SearchAdapter extends ExpandableSectionAdapter<Serializable> {
 		} else {
 			menuInflater.inflate(R.menu.multiselect_media, menu);
 		}
-
-		menu.removeItem(R.id.menu_remove_playlist);
 	}
 }

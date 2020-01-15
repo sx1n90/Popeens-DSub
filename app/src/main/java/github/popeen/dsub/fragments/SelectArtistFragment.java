@@ -11,6 +11,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
 import github.popeen.dsub.R;
 import github.popeen.dsub.adapter.ArtistAdapter;
 import github.popeen.dsub.adapter.SectionAdapter;
@@ -24,10 +28,6 @@ import github.popeen.dsub.util.Constants;
 import github.popeen.dsub.util.ProgressListener;
 import github.popeen.dsub.util.Util;
 import github.popeen.dsub.view.UpdateView;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 public class SelectArtistFragment extends SelectRecyclerFragment<Serializable> implements ArtistAdapter.OnMusicFolderChanged {
 	private static final String TAG = SelectArtistFragment.class.getSimpleName();
@@ -134,13 +134,6 @@ public class SelectArtistFragment extends SelectRecyclerFragment<Serializable> i
 	public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater) {
 		super.onCreateOptionsMenu(menu, menuInflater);
 
-		if(Util.isOffline(context) || Util.isTagBrowsing(context) || groupId != null) {
-			menu.removeItem(R.id.menu_first_level_artist);
-		} else {
-			if (Util.isFirstLevelArtist(context)) {
-				menu.findItem(R.id.menu_first_level_artist).setChecked(true);
-			}
-		}
 	}
 
 	@Override
@@ -152,12 +145,6 @@ public class SelectArtistFragment extends SelectRecyclerFragment<Serializable> i
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if(super.onOptionsItemSelected(item)) {
 			return true;
-		}
-
-		switch (item.getItemId()) {
-			case R.id.menu_first_level_artist:
-				toggleFirstLevelArtist();
-				break;
 		}
 
 		return false;

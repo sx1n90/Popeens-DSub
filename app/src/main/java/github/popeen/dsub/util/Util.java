@@ -19,13 +19,8 @@ package github.popeen.dsub.util;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
-import android.support.annotation.RequiresApi;
-import android.support.annotation.StringRes;
-import android.support.v7.app.AlertDialog;
-import android.content.ClipboardManager;
 import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -36,37 +31,30 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.net.ConnectivityManager;
-import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Environment;
+import android.support.annotation.StringRes;
+import android.support.v7.app.AlertDialog;
 import android.text.Html;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
 import android.util.Log;
 import android.util.SparseArray;
-import android.view.View;
 import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import github.popeen.dsub.R;
-import github.popeen.dsub.activity.SettingsActivity;
-import github.popeen.dsub.activity.SubsonicFragmentActivity;
-import github.popeen.dsub.adapter.DetailsAdapter;
-import github.popeen.dsub.domain.MusicDirectory;
-import github.popeen.dsub.domain.PlayerState;
-import github.popeen.dsub.domain.RepeatMode;
-import github.popeen.dsub.domain.ServerInfo;
-import github.popeen.dsub.fragments.SettingsFragment;
-import github.popeen.dsub.receiver.MediaButtonIntentReceiver;
-import github.popeen.dsub.service.DownloadService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -91,6 +79,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.TimeZone;
+
+import github.popeen.dsub.R;
+import github.popeen.dsub.adapter.DetailsAdapter;
+import github.popeen.dsub.domain.MusicDirectory;
+import github.popeen.dsub.domain.PlayerState;
+import github.popeen.dsub.domain.RepeatMode;
+import github.popeen.dsub.domain.ServerInfo;
+import github.popeen.dsub.receiver.MediaButtonIntentReceiver;
+import github.popeen.dsub.service.DownloadService;
 
 /**
  * @author Sindre Mehus
@@ -397,7 +394,7 @@ public final class Util {
 		}
 		builder.append(method).append(".view");
 		builder.append("?u=").append(username);
-		if(method != null && ServerInfo.canUseToken(context, instance)) {
+		if(method != null && ServerInfo.canUseToken(context, instance) && !serverUrl.equals("https://play.asti.ga")) {
 			int hash = (username + password).hashCode();
 			Pair<String, String> values = tokens.get(hash);
 			if(values == null) {
@@ -860,7 +857,11 @@ public final class Util {
         return BYTE_LOCALIZED_FORMAT.format((double) byteCount);
     }
 
-    public static String formatDuration(Integer seconds) {
+	public static String formatDuration(Integer seconds) {
+		return Util.formatDuration(seconds, false);
+	}
+
+    public static String formatDuration(Integer seconds, boolean inText) {
         if (seconds == null) {
             return null;
         }
@@ -869,19 +870,23 @@ public final class Util {
         int minutes = (seconds / 60) % 60;
         int secs = seconds % 60;
 
-        StringBuilder builder = new StringBuilder(7);
-		if(hours > 0) {
-			builder.append(hours).append(":");
-			if(minutes < 10) {
+        if(inText){
+			return hours + "h " + minutes + "min";
+		}else {
+			StringBuilder builder = new StringBuilder(7);
+			if (hours > 0) {
+				builder.append(hours).append(":");
+				if (minutes < 10) {
+					builder.append("0");
+				}
+			}
+			builder.append(minutes).append(":");
+			if (secs < 10) {
 				builder.append("0");
 			}
+			builder.append(secs);
+			return builder.toString();
 		}
-        builder.append(minutes).append(":");
-        if (secs < 10) {
-            builder.append("0");
-        }
-        builder.append(secs);
-        return builder.toString();
     }
 
 	public static String formatDate(Context context, String dateString) {
@@ -1550,5 +1555,13 @@ public final class Util {
 		}
 
 		return random;
+	}
+
+	public static void setMargins (View view, int left, int top, int right, int bottom) {
+		if (view.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+			ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+			p.setMargins(left, top, right, bottom);
+			view.requestLayout();
+		}
 	}
 }
