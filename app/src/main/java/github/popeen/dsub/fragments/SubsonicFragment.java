@@ -17,12 +17,10 @@
  Copyright 2009 (C) Sindre Mehus
  */
 package github.popeen.dsub.fragments;
-import android.app.Activity;
 
+import android.app.Activity;
 import android.app.SearchManager;
 import android.app.SearchableInfo;
-import android.support.v4.view.MenuItemCompat;
-import android.support.v7.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -33,8 +31,8 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.StatFs;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayoutManager;
@@ -54,9 +52,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import github.popeen.dsub.R;
 
 import java.io.File;
 import java.text.DateFormat;
@@ -211,9 +206,6 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-			case R.id.menu_global_shuffle:
-				onShuffleRequested();
-				return true;
 			case R.id.menu_exit:
 				exit();
 				return true;
@@ -234,30 +226,12 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 			case R.id.menu_play_now:
 				playNow(false, false);
 				return true;
-			case R.id.menu_play_last:
-				playNow(false, true);
-				return true;
-			case R.id.menu_play_next:
-				playNow(false, true, true);
-				return true;
-			case R.id.menu_shuffle:
-				playNow(true, false);
-				return true;
 			case R.id.menu_download:
 				downloadBackground(false);
 				clearSelected();
 				return true;
-			case R.id.menu_cache:
-				downloadBackground(true);
-				clearSelected();
-				return true;
 			case R.id.menu_delete:
 				delete();
-				clearSelected();
-				return true;
-			case R.id.menu_add_playlist:
-				List<Entry> songs = getSelectedEntries();
-				addToPlaylist(songs);
 				clearSelected();
 				return true;
 			case R.id.menu_star:case R.id.menu_unstar:
@@ -306,10 +280,6 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 				}
 				else {
 					menuInflater.inflate(R.menu.select_album_context, menu);
-
-					if(Util.isTagBrowsing(context)) {
-						menu.removeItem(R.id.menu_rate);
-					}
 				}
 			
 			} else if(!entry.isVideo()) {
@@ -389,20 +359,8 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 			case R.id.artist_menu_play_now:
 				downloadRecursively(artist.getId(), false, false, true, false, false);
 				break;
-			case R.id.artist_menu_play_shuffled:
-				downloadRecursively(artist.getId(), false, false, true, true, false);
-				break;
-			case R.id.artist_menu_play_next:
-				downloadRecursively(artist.getId(), false, true, false, false, false, true);
-				break;
-			case R.id.artist_menu_play_last:
-				downloadRecursively(artist.getId(), false, true, false, false, false);
-				break;
 			case R.id.artist_menu_download:
 				downloadRecursively(artist.getId(), false, true, false, false, true);
-				break;
-			case R.id.artist_menu_pin:
-				downloadRecursively(artist.getId(), true, true, false, false, true);
 				break;
 			case R.id.artist_menu_delete:
 				deleteRecursively(artist);
@@ -414,25 +372,9 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 				artistOverride = true;
 				downloadRecursively(entry.getId(), false, false, true, false, false);
 				break;
-			case R.id.album_menu_play_shuffled:
-				artistOverride = true;
-				downloadRecursively(entry.getId(), false, false, true, true, false);
-				break;
-			case R.id.album_menu_play_next:
-				artistOverride = true;
-				downloadRecursively(entry.getId(), false, true, false, false, false, true);
-				break;
-			case R.id.album_menu_play_last:
-				artistOverride = true;
-				downloadRecursively(entry.getId(), false, true, false, false, false);
-				break;
 			case R.id.album_menu_download:
 				artistOverride = true;
 				downloadRecursively(entry.getId(), false, true, false, false, true);
-				break;
-			case R.id.album_menu_pin:
-				artistOverride = true;
-				downloadRecursively(entry.getId(), true, true, false, false, true);
 				break;
 			case R.id.album_menu_star:
 				UpdateHelper.toggleStarred(context, entry);
@@ -446,17 +388,8 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 			case R.id.album_menu_show_artist:
 				showAlbumArtist((Entry) selectedItem);
 				break;
-			case R.id.album_menu_share:
-				createShare(songs);
-				break;
 			case R.id.song_menu_play_now:
 				playNow(songs);
-				break;
-			case R.id.song_menu_play_next:
-				getDownloadService().download(songs, false, false, true, false);
-				break;
-			case R.id.song_menu_play_last:
-				getDownloadService().download(songs, false, false, false, false);
 				break;
 			case R.id.song_menu_download:
 				getDownloadService().downloadBackground(songs, false);
@@ -466,9 +399,6 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 				break;
 			case R.id.song_menu_delete:
 				deleteSongs(songs);
-				break;
-			case R.id.song_menu_add_playlist:
-				addToPlaylist(songs);
 				break;
 			case R.id.song_menu_star:
 				UpdateHelper.toggleStarred(context, entry);
@@ -481,9 +411,6 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 				break;
 			case R.id.song_menu_stream_external:
 				streamExternalPlayer(entry);
-				break;
-			case R.id.song_menu_share:
-				createShare(songs);
 				break;
 			case R.id.song_menu_show_album:
 				showAlbum((Entry) selectedItem);
@@ -499,9 +426,6 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 				break;
 			case R.id.bookmark_menu_delete:
 				deleteBookmark(entry, null);
-				break;
-			case R.id.menu_rate:
-				UpdateHelper.setRating(context, entry);
 				break;
 			default:
 				return false;

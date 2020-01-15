@@ -16,13 +16,12 @@
 package github.popeen.dsub.adapter;
 
 import android.content.Context;
-
-import java.util.List;
-
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import java.util.List;
 
 import github.popeen.dsub.R;
 import github.popeen.dsub.domain.Bookmark;
@@ -72,7 +71,5 @@ public class BookmarkAdapter extends SectionAdapter<MusicDirectory.Entry> {
 		} else {
 			menuInflater.inflate(R.menu.multiselect_media, menu);
 		}
-
-		menu.removeItem(R.id.menu_remove_playlist);
 	}
 }

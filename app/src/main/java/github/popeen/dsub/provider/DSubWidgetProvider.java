@@ -24,8 +24,8 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapShader;
@@ -40,6 +40,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
+
 import github.popeen.dsub.R;
 import github.popeen.dsub.activity.SubsonicActivity;
 import github.popeen.dsub.activity.SubsonicFragmentActivity;
